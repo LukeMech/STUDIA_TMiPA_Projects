@@ -1,0 +1,33 @@
+import sympy as sp
+from modules.plots import save_latex_img, generate_analysis_plots
+from modules.diagrams import draw_main_diagram, draw_reduced_diagram
+
+def generate_assets(sys):
+    """
+    Generuje wszystkie zasoby graficzne: diagramy, wykresy, wzory.
+    """
+    print("Generowanie obrazów podstawowych...")
+    save_latex_img(r"G(s) = \frac{1}{4s+1}", "obj.png")
+    save_latex_img(rf"G_{{cl}}(s) = \frac{{G(s)}}{{1 + G(s) H(s)}} = {sp.latex(sys['G_cl_sym'])}", "final_tf.png")
+
+    print("Generowanie założeń...")
+    save_latex_img(r"G(s) = \frac{1}{4s+1}", "G_eq.png")
+    save_latex_img(r"G_r(s) = \frac{1}{s}", "Gr_eq.png")
+    save_latex_img(r"k_1 = 0.2", "k1_eq.png")
+    save_latex_img(r"k_2 = 0.7", "k2_eq.png")
+    save_latex_img(r"k_3 = 1.8", "k3_eq.png")
+
+    print("Generowanie kroków obliczeń transmitancji...")
+    save_latex_img(r"H_{wew}(s) = k_1 (G_r(s) + k_2) = 0.2 \left( \frac{1}{s} + 0.7 \right)", "step1.png")
+    save_latex_img(r"H(s) = k_3 H_{wew}(s) = 1.8 \cdot 0.2 \left( \frac{1}{s} + 0.7 \right)", "step2.png")
+
+    print("Generowanie wykresów analizy...")
+    generate_analysis_plots(sys['G_cl_num'], sys['L_num'], "step.png", "nyquist.png")
+
+    print("Generowanie diagramu blokowego...")
+    draw_main_diagram("main_diag.png")
+
+    print("Generowanie diagramu zastępczego...")
+    draw_reduced_diagram("reduced_diag.png")
+
+    print("Generowanie zasobów zakończone.")
