@@ -6,8 +6,13 @@ def get_system_functions(k1, k2, k3):
     s = sp.symbols('s')
     G_s = 1 / (4*s + 1)
     Gr_s = 1 / s
+    
+    # Tor sprzezenia - H(s)
     H_wew = k1 * (Gr_s + k2)
     H_total = sp.simplify(k3 * H_wew)
+    
+    # Uklad otwarty L(s) i zamkniety G_cl(s)
+    L_sym = sp.simplify(G_s * H_total)
     G_cl_sym = sp.simplify(G_s / (1 + G_s * H_total))
 
     # Numerycznie (Control)
@@ -20,5 +25,6 @@ def get_system_functions(k1, k2, k3):
 
     return {
         "G_s": G_s, "Gr_s": Gr_s, "G_cl_sym": G_cl_sym,
-        "G_cl_num": G_cl_num, "L_num": L_num
+        "G_cl_num": G_cl_num, "L_num": L_num, "L_sym": L_sym,
+        "H_s": H_total
     }
