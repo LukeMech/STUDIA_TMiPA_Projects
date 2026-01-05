@@ -1,16 +1,9 @@
-"""
-Projekt 2 - Analiza Liniowego Układu Automatyki
-Autor: Łukasz Błaszczyk
-Data: 2 stycznia 2026
-"""
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 
-import os
-from modules.calculations import get_system_functions
-from modules.assets import generate_assets
-from modules.pdf_report import ProjectReport
-from fpdf.enums import XPos, YPos
+# Konfiguracja konsoli rich
+console = Console()
 
-# Konfiguracja projektu
 k1, k2, k3 = 0.2, 0.7, 1.8
 student_name = "Łukasz Błaszczyk"
 student_number = "339513"
@@ -19,103 +12,126 @@ font_name = "Roboto"
 font_base = f"res/fonts/{font_name}"
 
 def main():
-    """
-    Główna funkcja programu - wykonuje analizę systemu i generuje raport.
-    """
-    print("Rozpoczynam analizę systemu...")
+    # Definiujemy styl paska postępu
+    with Progress(
+        SpinnerColumn(speed=2), # Kręcące się kółeczko
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(), # Pasek postępu
+        TaskProgressColumn(text_format="[yellow]{task.percentage:>3.0f}%"), # Procenty
+        console=console
+    ) as progress:
+        
+        # Tworzymy główne zadanie
+        overall_task = progress.add_task("[bright_blue]Generowanie raportu TMiPA...", total=5)
+        
+        import os
+        from modules.calculations import get_system_functions
+        from modules.assets import generate_assets
+        from modules.pdf_report import ProjectReport
+        from fpdf.enums import XPos, YPos
+        from g4f.client import Client
 
-    # Obliczenia podstawowych transmitancji
-    sys = get_system_functions(k1, k2, k3)
-    print("Obliczenia transmitancji zakończone.")
+        def get_ai_response(prompt, ws=False):
+            client = Client()
+            response = client.chat.completions.create(
+                model="deepseek",
+                messages=[{"role": "user", "content": prompt}],
+                web_search=ws
+            )
+            return response.choices[0].message.content
+        
+        # KROK 1: Obliczenia
+        progress.update(overall_task, description="[blue]Obliczanie transmitancji...")
+        sys = get_system_functions(k1, k2, k3)
+        progress.advance(overall_task)
 
-    # Generowanie zasobów graficznych
-    generate_assets(sys, k1, k2, k3)
+        # KROK 2: Zasoby graficzne
+        progress.update(overall_task, description="[magenta]Generowanie wykresów i wzorów...")
+        # Warto wyciszyć printy w assets.py, żeby nie "psuły" paska postępu
+        generate_assets(sys, k1, k2, k3)
+        progress.advance(overall_task)
 
-    # Tworzenie raportu PDF
-    print("Tworzenie raportu PDF...")
-    pdf = ProjectReport(font_name, student_name)
-    pdf.add_font(font_name, "", f"{font_base}.ttf")
-    pdf.add_font(font_name, "B", f"{font_base}_Bold.ttf")
-    pdf.add_font(font_name, "I", f"{font_base}_Italic.ttf")
-    pdf.add_font(font_name, "BI", f"{font_base}_Bold_Italic.ttf")
+        # KROK 3: AI
+        progress.update(overall_task, description="[green]Generowanie opisów przez AI...")
+        ai_nyq_summary = get_ai_response("Podsumuj jak działa wykres Nyquista. W tym przypadku do jego narysowania uzylem cz. Re, Im, parametru L_jw. Nie wspominaj co robią - podsumuj jedynie działanie tego wykresu.")
+        progress.advance(overall_task)
 
-    def add_img_to_ch(img_name, w=45, ydel = 4):
-        pdf.image(img_name, w=w)
-        pdf.set_y(pdf.get_y() - ydel)
+        # KROK 4: PDF
+        progress.update(overall_task, description="[cyan]Składanie pliku PDF...")
+        pdf = ProjectReport(font_name, student_name)
+        pdf.add_font(font_name, "", f"{font_base}.ttf")
+        pdf.add_font(font_name, "B", f"{font_base}_Bold.ttf")
+        pdf.add_font(font_name, "I", f"{font_base}_Italic.ttf")
+        pdf.add_font(font_name, "BI", f"{font_base}_Bold_Italic.ttf")
 
-    # Strona tytułowa
-    pdf.add_page()
-    pdf.ln(50)
-    pdf.set_font("Roboto", "B", 26)
-    pdf.cell(0, 10, "Projekt 2 TMiPA 2025/2026", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.set_font("Roboto", "BI", 20)
-    pdf.cell(0, 20, "Analiza liniowego układu automatyki", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.set_font("Roboto", "B", 14)
-    pdf.cell(0, 10, f"{student_name}, {student_number}", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.set_font("Roboto", "I", 14)
-    pdf.cell(0, 10, f"Zrobione w Pythonie, dostępne na github:", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
-    pdf.set_text_color("#FB4AC5")  # Set text color to pink
-    pdf.cell(0, 10, code_link, align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
-    pdf.set_text_color(0, 0, 0)  # Reset text color to black
-    pdf.set_font("Roboto", "", 14)  # Reset font style
+        def add_img_to_ch(img_name, w=45, ydel=4):
+            pdf.image(img_name, w=w)
+            pdf.set_y(pdf.get_y() - ydel)
 
+        # Strona tytułowa
+        pdf.add_page()
+        pdf.ln(50)
+        pdf.set_font(font_name, "B", 26)
+        pdf.cell(0, 10, "Projekt 2 TMiPA 2025/2026", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        pdf.set_font(font_name, "BI", 20)
+        pdf.cell(0, 20, "Analiza liniowego układu automatyki", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        pdf.set_font(font_name, "B", 14)
+        pdf.cell(0, 10, f"{student_name}, {student_number}", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        pdf.set_font(font_name, "I", 14)
+        pdf.cell(0, 10, f"Zrobione w Pythonie, dostępne na github:", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
+        pdf.set_text_color("#FB4AC5")  # Set text color to pink
+        pdf.cell(0, 10, code_link, align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
+        pdf.set_text_color(0, 0, 0)  # Reset text color to black
 
-    # Rozdziały
-    pdf.add_page()
-    pdf.chapter_title("Założenia")
-    pdf.image("main_diag.png", x=15, w=180)
+        # Rozdziały
+        pdf.add_page()
+        pdf.chapter_title("Założenia")
+        pdf.image("main_diag.png", x=15, w=180)
 
-    pdf.set_y(pdf.get_y() - 8)
-    for img in ["G_eq.png", "Gr_eq.png", "k1_eq.png", "k2_eq.png", "k3_eq.png"]:
-        add_img_to_ch(img)
-    pdf.set_y(pdf.get_y() + 8)
+        pdf.set_y(pdf.get_y() - 8)
+        for img in ["G_eq.png", "Gr_eq.png", "k1_eq.png", "k2_eq.png", "k3_eq.png"]:
+            add_img_to_ch(img)
+        pdf.set_y(pdf.get_y() + 8)
 
-    pdf.chapter_title("a) Transmitancja zastępcza (redukcja układu do 1 bloku)")
-    pdf.image("reduced_diag.png", x=67.5, w=100)
-    pdf.set_y(pdf.get_y() - 6)
+        pdf.chapter_title("a) Transmitancja zastępcza (redukcja układu do 1 bloku)")
+        pdf.image("reduced_diag.png", x=67.5, w=100)
+        pdf.set_y(pdf.get_y() - 6)
 
-    for img in ["step1.png", "step2.png"]:
-        add_img_to_ch(img, w=90, ydel=6)
-    pdf.set_y(pdf.get_y() + 2)
-    add_img_to_ch("final_tf.png", w=110, ydel=-8)
+        for img in ["step1.png", "step2.png"]:
+            add_img_to_ch(img, w=90, ydel=6)
+        pdf.set_y(pdf.get_y() + 2)
+        add_img_to_ch("final_tf.png", w=110, ydel=-8)
 
-    pdf.chapter_title("b) Analiza wymuszenia skokowego u0(t) = 2*1(t)")
-    pdf.image("step.png", x=10, w=180)
-    
-    pdf.add_page()
-    pdf.chapter_title("c) Wykres Nyquista")
-    pdf.set_y(pdf.get_y() - 6)
-    add_img_to_ch("Re_eq.png", w=60)
-    add_img_to_ch("Im_eq.png", w=80)
-    add_img_to_ch("L_jw_eq.png", w=100, ydel=0)
-    pdf.image("nyquist.png", x=10, w=180)
-    
-    pdf.add_page()
-    pdf.chapter_title("d) Redukcja transmitancji operatorowej sprzężenia")
-    add_img_to_ch("step2.png", w=90, ydel=6)
+        pdf.chapter_title("b) Analiza wymuszenia skokowego u0(t) = 2*1(t)")
+        pdf.image("step.png", x=10, w=180)
+        
+        pdf.add_page()
+        pdf.chapter_title("c) Wykres Nyquista")
+        pdf.set_font(font_name, "", 14)  # Reset font style
+        pdf.write(text=ai_nyq_summary+"\n")
+        add_img_to_ch("Re_eq.png", w=60)
+        add_img_to_ch("Im_eq.png", w=80)
+        add_img_to_ch("L_jw_eq.png", w=100, ydel=0)
+        pdf.image("nyquist.png", x=10, w=180)
 
-    # Zapisywanie PDF
-    nazwa_raportu = f"Raport_TMiPA_{student_name.replace(' ', '_')}.pdf"
-    pdf.output(nazwa_raportu)
-    print(f"Raport zapisany jako: {nazwa_raportu}")
+        pdf.chapter_title("d) Redukcja transmitancji operatorowej sprzężenia")
+        add_img_to_ch("step2.png", w=90, ydel=6)
+        
+        # Zapisywanie PDF
+        nazwa_raportu = f"Raport_TMiPA_{student_name.replace(' ', '_')}.pdf"
+        pdf.output(nazwa_raportu)
+        progress.advance(overall_task)
 
-    # Czyszczenie plików tymczasowych
-    deleted_files = []
-    for plik in os.listdir("."):
-        if plik.endswith(".png"):
-            try:
-                if os.path.isfile(plik):
-                    os.remove(plik)
-                    deleted_files.append(plik)
-            except OSError as e:
-                print(f"Nie można usunąć pliku {plik}: {e}")
-    
-    if deleted_files:
-        print(f"Pliki tymczasowe usunięte ({len(deleted_files)}): {', '.join(deleted_files)}")
-    else:
-        print("Brak plików tymczasowych do usunięcia.")
+        # KROK 5: Sprzątanie
+        progress.update(overall_task, description="[red]Usuwanie plików tymczasowych...")
+        for plik in os.listdir("."):
+            if plik.endswith(".png"):
+                os.remove(plik)
+        progress.advance(overall_task)
+        
+        progress.update(overall_task, description="[bold green]Generacja zakończona sukcesem!")
 
-    print("Analiza zakończona pomyślnie!")
+    console.print(f"\n[bold green]Gotowe![/bold green] Raport znajdziesz pod nazwą: [underline]{nazwa_raportu}[/underline]")
 
 if __name__ == "__main__":
     main()

@@ -9,20 +9,17 @@ def generate_assets(sys, k1, k2, k3):
     s = sp.symbols('s')
     w = sp.symbols('omega', real=True)
 
-    print("Generowanie obrazów podstawowych...")
     # Obiekt G(s) jest stały w tym zadaniu
     save_latex_img(r"G(s) = \frac{1}{4s+1}", "obj.png")
     # G_cl_sym jest już przeliczone w sys
     save_latex_img(rf"G_{{cl}}(s) = \frac{{G(s)}}{{1 + G(s) H(s)}} = {sp.latex(sys['G_cl_sym'])}", "final_tf.png")
 
-    print("Generowanie założeń...")
     save_latex_img(r"G(s) = \frac{1}{4s+1}", "G_eq.png")
     save_latex_img(r"G_r(s) = \frac{1}{s}", "Gr_eq.png")
     save_latex_img(rf"k_1 = {k1}", "k1_eq.png")
     save_latex_img(rf"k_2 = {k2}", "k2_eq.png")
     save_latex_img(rf"k_3 = {k3}", "k3_eq.png")
 
-    print("Generowanie kroków obliczeń transmitancji...")
     # Dynamiczne wyliczenie H_wew i H(s) dla LaTeX
     h_wew_expr = k1 * (1/s + k2)
     h_total_expr = k3 * h_wew_expr
@@ -30,7 +27,6 @@ def generate_assets(sys, k1, k2, k3):
     save_latex_img(rf"H_{{wew}}(s) = k_1 (G_r(s) + k_2) = {sp.latex(h_wew_expr)}", "step1.png")
     save_latex_img(rf"H(s) = k_3 H_{{wew}}(s) = {sp.latex(sp.simplify(h_total_expr))}", "step2.png")
 
-    print("Generowanie wzorów transmitancji widmowej...")
     # Obliczenie L(jw) poprzez podstawienie s = jw
     l_sym = sys['L_sym']
     l_jw = l_sym.subs(s, sp.I * w)
@@ -44,11 +40,7 @@ def generate_assets(sys, k1, k2, k3):
     save_latex_img(rf"Re[L(j\omega)] = {sp.latex(re_l)}", "Re_eq.png")
     save_latex_img(rf"Im[L(j\omega)] = {sp.latex(im_l)}", "Im_eq.png")
 
-    print("Generowanie wykresów analizy...")
     generate_analysis_plots(sys['G_cl_num'], sys['L_num'], "step.png", "nyquist.png")
 
-    print("Generowanie diagramów...")
     draw_main_diagram("main_diag.png")
     draw_reduced_diagram("reduced_diag.png")
-
-    print("Generowanie zasobów zakończone.")

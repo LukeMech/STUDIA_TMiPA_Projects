@@ -7,7 +7,10 @@ requires-python = ">=3.13"
 dependencies = [
     "control>=0.10.2",
     "fpdf2>=2.8.5",
+    "g4f>=6.8.3",
     "matplotlib>=3.10.8",
     "numpy>=2.4.0",
+    "rich>=14.2.0",
     "sympy>=1.14.0",
+    "typing-extensions>=4.15.0",
 ]

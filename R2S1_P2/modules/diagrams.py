@@ -81,7 +81,6 @@ def draw_main_diagram(filename):
     # Zapis pliku
     plt.savefig(filename, bbox_inches='tight', dpi=300)
     plt.close()
-    print(f"Diagram został zapisany jako: {filename}")
 
 def draw_reduced_diagram(filename):
     _, ax = plt.subplots(figsize=(8, 4))
@@ -105,5 +104,4 @@ def draw_reduced_diagram(filename):
     # Zapis
     plt.savefig(filename, bbox_inches='tight', dpi=300)
     plt.close()
-    print(f"Diagram zastępczy zapisany jako: {filename}")
 
