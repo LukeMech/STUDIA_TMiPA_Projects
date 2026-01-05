@@ -2,37 +2,53 @@ import sympy as sp
 from modules.plots import save_latex_img, generate_analysis_plots
 from modules.diagrams import draw_main_diagram, draw_reduced_diagram
 
-def generate_assets(sys):
+def generate_assets(sys, k1, k2, k3):
     """
-    Generuje wszystkie zasoby graficzne: diagramy, wykresy, wzory.
+    Generuje wszystkie zasoby graficzne automatycznie na podstawie parametrów.
     """
+    s = sp.symbols('s')
+    w = sp.symbols('omega', real=True)
+
     print("Generowanie obrazów podstawowych...")
+    # Obiekt G(s) jest stały w tym zadaniu
     save_latex_img(r"G(s) = \frac{1}{4s+1}", "obj.png")
+    # G_cl_sym jest już przeliczone w sys
     save_latex_img(rf"G_{{cl}}(s) = \frac{{G(s)}}{{1 + G(s) H(s)}} = {sp.latex(sys['G_cl_sym'])}", "final_tf.png")
 
     print("Generowanie założeń...")
     save_latex_img(r"G(s) = \frac{1}{4s+1}", "G_eq.png")
     save_latex_img(r"G_r(s) = \frac{1}{s}", "Gr_eq.png")
-    save_latex_img(r"k_1 = 0.2", "k1_eq.png")
-    save_latex_img(r"k_2 = 0.7", "k2_eq.png")
-    save_latex_img(r"k_3 = 1.8", "k3_eq.png")
+    save_latex_img(rf"k_1 = {k1}", "k1_eq.png")
+    save_latex_img(rf"k_2 = {k2}", "k2_eq.png")
+    save_latex_img(rf"k_3 = {k3}", "k3_eq.png")
 
     print("Generowanie kroków obliczeń transmitancji...")
-    save_latex_img(r"H_{wew}(s) = k_1 (G_r(s) + k_2) = 0.2 \left( \frac{1}{s} + 0.7 \right)", "step1.png")
-    save_latex_img(r"H(s) = k_3 H_{wew}(s) = 0.36 \left( \frac{1}{s} + 0.7 \right)", "step2.png")
+    # Dynamiczne wyliczenie H_wew i H(s) dla LaTeX
+    h_wew_expr = k1 * (1/s + k2)
+    h_total_expr = k3 * h_wew_expr
+    
+    save_latex_img(rf"H_{{wew}}(s) = k_1 (G_r(s) + k_2) = {sp.latex(h_wew_expr)}", "step1.png")
+    save_latex_img(rf"H(s) = k_3 H_{{wew}}(s) = {sp.latex(sp.simplify(h_total_expr))}", "step2.png")
+
+    print("Generowanie wzorów transmitancji widmowej...")
+    # Obliczenie L(jw) poprzez podstawienie s = jw
+    l_sym = sys['L_sym']
+    l_jw = l_sym.subs(s, sp.I * w)
+    
+    # Wyznaczenie części rzeczywistej i urojonej
+    # simplify pomaga uzyskać czytelną postać ułamkową
+    re_l = sp.simplify(sp.re(l_jw))
+    im_l = sp.simplify(sp.im(l_jw))
+
+    save_latex_img(rf"s = j\omega \to L(j\omega) = {sp.latex(sp.simplify(l_jw))}", "L_jw_eq.png")
+    save_latex_img(rf"Re[L(j\omega)] = {sp.latex(re_l)}", "Re_eq.png")
+    save_latex_img(rf"Im[L(j\omega)] = {sp.latex(im_l)}", "Im_eq.png")
 
     print("Generowanie wykresów analizy...")
     generate_analysis_plots(sys['G_cl_num'], sys['L_num'], "step.png", "nyquist.png")
 
-    print("Generowanie diagramu blokowego...")
+    print("Generowanie diagramów...")
     draw_main_diagram("main_diag.png")
-
-    print("Generowanie diagramu zastępczego...")
     draw_reduced_diagram("reduced_diag.png")
-
-    print("Generowanie wzorów transmitancji widmowej...")
-    save_latex_img(r"s = j\omega \to L(j\omega) = \frac{0.36 + j0.252\omega}{-4\omega^2 + j\omega}", "L_jw_eq.png")
-    save_latex_img(r"Re[L(j\omega)] = \frac{-1.188}{16\omega^2 + 1}", "Re_eq.png")
-    save_latex_img(r"Im[L(j\omega)] = \frac{-(0.36 + 1.008\omega^2)}{\omega(16\omega^2 + 1)}", "Im_eq.png")
 
     print("Generowanie zasobów zakończone.")

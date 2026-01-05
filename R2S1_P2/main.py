@@ -29,7 +29,7 @@ def main():
     print("Obliczenia transmitancji zakończone.")
 
     # Generowanie zasobów graficznych
-    generate_assets(sys)
+    generate_assets(sys, k1, k2, k3)
 
     # Tworzenie raportu PDF
     print("Tworzenie raportu PDF...")
