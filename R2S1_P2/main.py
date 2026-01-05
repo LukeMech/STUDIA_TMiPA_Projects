@@ -1,5 +1,7 @@
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.table import Table
+from rich.panel import Panel
 
 # Konfiguracja konsoli rich
 console = Console()
@@ -12,7 +14,18 @@ font_name = "Roboto"
 font_base = f"res/fonts/{font_name}"
 
 def main():
-    # Definiujemy styl paska postępu
+    # 1. Wyświetlenie tabeli z danymi wejściowymi
+    input_table = Table(show_header=False, box=None)
+    input_table.add_column("Parametr", style="dim")
+    input_table.add_column("Wartość", style="bold yellow")
+    input_table.add_row("Student", student_name)
+    input_table.add_row("Indeks", student_number)
+    input_table.add_row("Parametry k", f"k1={k1}, k2={k2}, k3={k3}")
+    input_table.add_row("GitHub", code_link)
+    
+    console.print(Panel(input_table, title="[bold blue]PARAMETRY WEJŚCIOWE PROJEKTU[/bold blue]", border_style="bold blue"))
+
+    # 2. Proces generowania z paskiem postępu
     with Progress(
         SpinnerColumn(speed=2), # Kręcące się kółeczko
         TextColumn("[progress.description]{task.description}"),
@@ -22,7 +35,7 @@ def main():
     ) as progress:
         
         # Tworzymy główne zadanie
-        overall_task = progress.add_task("[bright_blue]Generowanie raportu TMiPA...", total=5)
+        overall_task = progress.add_task("[bright_blue]Generowanie raportu...", total=6)
         
         import os
         from modules.calculations import get_system_functions
@@ -35,26 +48,38 @@ def main():
             client = Client()
             response = client.chat.completions.create(
                 model="deepseek",
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": prompt + " Nie używaj formatowania tekstu (pogrubień przy pomocy * itp.). Odpowiedz w formie czystego tekstu. "}],
                 web_search=ws
             )
             return response.choices[0].message.content
         
         # KROK 1: Obliczenia
-        progress.update(overall_task, description="[blue]Obliczanie transmitancji...")
+        progress.update(overall_task, description="[green]Obliczanie transmitancji...")
         sys = get_system_functions(k1, k2, k3)
         progress.advance(overall_task)
 
         # KROK 2: Zasoby graficzne
-        progress.update(overall_task, description="[magenta]Generowanie wykresów i wzorów...")
+        progress.update(overall_task, description="[red]Generowanie wykresów i wzorów...")
         # Warto wyciszyć printy w assets.py, żeby nie "psuły" paska postępu
         generate_assets(sys, k1, k2, k3)
         progress.advance(overall_task)
 
         # KROK 3: AI
-        progress.update(overall_task, description="[green]Generowanie opisów przez AI...")
+        progress.update(overall_task, description="[magenta]Generowanie opisów przez AI (może zająć długi czas)...")
+
+        # Zastąp funkcję get_ai_response gotowym stringiem, aby ustawić opis na sztywno, a nie generować go za każdym razem
+        ai_forcejump_summary = get_ai_response("Podsumuj jak działa wykres odpowiedzi skokowej dla wymuszenia u0(t)=2*1(t). Opisz co się dzieje w układzie i jak to widać na wykresie.")
+        progress.advance(overall_task)
+
         ai_nyq_summary = get_ai_response("Podsumuj jak działa wykres Nyquista. W tym przypadku do jego narysowania uzylem cz. Re, Im, parametru L_jw. Nie wspominaj co robią - podsumuj jedynie działanie tego wykresu.")
         progress.advance(overall_task)
+
+        # 3. Wyświetlenie tabeli z odpowiedziami AI
+        ai_table = Table(show_header=False, box=None)        
+        ai_table.add_row("Skok", ai_forcejump_summary)
+        ai_table.add_row("Nyquist", ai_nyq_summary)
+
+        console.print(Panel(ai_table, title="[bold magenta]ANALIZA GENERATYWNA AI[/bold magenta]", border_style="bold magenta"))
 
         # KROK 4: PDF
         progress.update(overall_task, description="[cyan]Składanie pliku PDF...")
@@ -103,9 +128,10 @@ def main():
         add_img_to_ch("final_tf.png", w=110, ydel=-8)
 
         pdf.chapter_title("b) Analiza wymuszenia skokowego u0(t) = 2*1(t)")
+        pdf.set_font(font_name, "", 14)  # Reset font style
+        pdf.write(text=ai_forcejump_summary+"\n")
         pdf.image("step.png", x=10, w=180)
         
-        pdf.add_page()
         pdf.chapter_title("c) Wykres Nyquista")
         pdf.set_font(font_name, "", 14)  # Reset font style
         pdf.write(text=ai_nyq_summary+"\n")
@@ -127,11 +153,18 @@ def main():
         for plik in os.listdir("."):
             if plik.endswith(".png"):
                 os.remove(plik)
+                
         progress.advance(overall_task)
-        
-        progress.update(overall_task, description="[bold green]Generacja zakończona sukcesem!")
 
-    console.print(f"\n[bold green]Gotowe![/bold green] Raport znajdziesz pod nazwą: [underline]{nazwa_raportu}[/underline]")
+        # 4. Tabelka końcowa (Wynikowa)
+        result_table = Table(show_header=False, box=None)
+        result_table.add_row("[bold cyan]PLIK WYJŚCIOWY:[/bold cyan]", f"[underline yellow]{nazwa_raportu}[/underline yellow]")
+        
+        console.print(Panel(result_table, title="[bold green]FINAŁ[/bold green]", border_style="green"))
+
+        progress.update(overall_task, description="[bold green]Sukces!")
+
+    #console.print(f"\n[bold green]Gotowe![/bold green] Raport znajdziesz pod nazwą: [underline]{nazwa_raportu}[/underline]")
 
 if __name__ == "__main__":
     main()
