@@ -102,13 +102,6 @@ def main(student_info):
             ai_nyq_summary = get_ai_response("Podsumuj jak działa wykres Nyquista. W tym przypadku do jego narysowania uzylem cz. Re, Im, parametru L_jw. Nie wspominaj co robią - podsumuj jedynie działanie tego wykresu.")
             progress.advance(overall_task)
 
-        # 3. Wyświetlenie tabeli z odpowiedziami AI
-        ai_table = Table(show_header=False, box=None)        
-        ai_table.add_row("Skok", ai_forcejump_summary)
-        ai_table.add_row("Nyquist", ai_nyq_summary)
-
-        console.print(Panel(ai_table, title="[bold magenta]ANALIZA GENERATYWNA AI[/bold magenta]", border_style="bold magenta"))
-
         # KROK 4: PDF
         progress.update(overall_task, description="[cyan]Składanie pliku PDF...")
         pdf = ProjectReport(font_name, student_name)
@@ -185,7 +178,7 @@ def main(student_info):
 
         progress.update(overall_task, description="[grey]Sukces!")
 
-    #console.print(f"\n[bold green]Gotowe![/bold green] Raport znajdziesz pod nazwą: [underline]{nazwa_raportu}[/underline]")
+
 
 if __name__ == "__main__":
     start_time = time.time()
