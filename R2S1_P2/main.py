@@ -35,7 +35,7 @@ def main():
     ) as progress:
         
         # Tworzymy główne zadanie
-        overall_task = progress.add_task("[bright_blue]Generowanie raportu...", total=6)
+        overall_task = progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=7)
         
         import os
         from modules.calculations import get_system_functions
@@ -54,6 +54,8 @@ def main():
             return response.choices[0].message.content
         
         # KROK 1: Obliczenia
+        progress.advance(overall_task)
+
         progress.update(overall_task, description="[green]Obliczanie transmitancji...")
         sys = get_system_functions(k1, k2, k3)
         progress.advance(overall_task)

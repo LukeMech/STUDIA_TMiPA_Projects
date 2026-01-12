@@ -7,7 +7,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 ## 2. Uruchom kod
 ```pwsh
-uv sync
+uv sync --upgrade
 uv run main.py
 ```
 
