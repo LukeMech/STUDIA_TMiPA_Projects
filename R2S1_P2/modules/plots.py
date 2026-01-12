@@ -1,14 +1,21 @@
 import matplotlib.pyplot as plt
 import control as ctrl
+import os
 
-def save_latex_img(latex_str, filename, size=22):
+def save_latex_img(temp_dir, latex_str, filename, size=22):
+    os.makedirs(temp_dir, exist_ok=True)
+    filepath = os.path.join(temp_dir, filename)
     fig = plt.figure(figsize=(4, 1))
     plt.text(0, 0, f"${latex_str}$", size=size)
     plt.axis('off')
-    plt.savefig(filename, dpi=200, transparent=True, bbox_inches='tight')
+    plt.savefig(filepath, dpi=200, transparent=True, bbox_inches='tight')
     plt.close()
 
-def generate_analysis_plots(G_cl, L, step_file, nyquist_file):
+def generate_analysis_plots(temp_dir, G_cl, L, step_file, nyquist_file):
+    os.makedirs(temp_dir, exist_ok=True)
+    step_path = os.path.join(temp_dir, step_file)
+    nyquist_path = os.path.join(temp_dir, nyquist_file)
+
     # Skokowa
     t, y = ctrl.step_response(2 * G_cl)
     plt.figure(figsize=(6, 4))
@@ -16,11 +23,11 @@ def generate_analysis_plots(G_cl, L, step_file, nyquist_file):
     plt.xlabel('Czas [s]')
     plt.ylabel('Wyjście y(t)')
     plt.grid(True)
-    plt.savefig(step_file, dpi=150)
+    plt.savefig(step_path, dpi=150)
     plt.close()
 
     # Nyquist
     plt.figure(figsize=(5, 5))
     ctrl.nyquist_plot(L, title='', color="#FB4AC5")
-    plt.savefig(nyquist_file, dpi=150)
+    plt.savefig(nyquist_path, dpi=150)
     plt.close()

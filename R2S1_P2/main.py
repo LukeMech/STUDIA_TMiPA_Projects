@@ -2,18 +2,36 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 from rich.table import Table
 from rich.panel import Panel
+import tomllib, os, shutil, time
+
+# Load students data from students.toml
+students_file = "students.toml"
+if not os.path.exists(students_file):
+    shutil.copy("students.sample.toml", students_file)
+
+with open(students_file, "rb") as f:  # Use binary mode for tomllib
+    students_data = tomllib.load(f)
+
+students = [
+    (
+        student_info["name"],
+        student_index,
+        student_info["k1"],
+        student_info["k2"],
+        student_info["k3"],
+        student_info["code_link"],
+        student_info.get("replace_ai", [])
+    )
+    for student_index, student_info in students_data.items()
+]
 
 # Konfiguracja konsoli rich
 console = Console()
-
-k1, k2, k3 = 0.2, 0.7, 1.8
-student_name = "Łukasz Błaszczyk"
-student_number = "339513"
-code_link = "https://github.com/LukeMech/STUDIA_TMiPA_Projects/tree/main/R2S1_P2"
 font_name = "Roboto"
 font_base = f"res/fonts/{font_name}"
 
-def main():
+def main(student_info):
+    student_name, student_number, k1, k2, k3, code_link, replace_ai = student_info
     # 1. Wyświetlenie tabeli z danymi wejściowymi
     input_table = Table(show_header=False, box=None)
     input_table.add_column("Parametr", style="dim")
@@ -35,7 +53,7 @@ def main():
     ) as progress:
         
         # Tworzymy główne zadanie
-        overall_task = progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=7)
+        overall_task = progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=6)
         
         import os
         from modules.calculations import get_system_functions
@@ -63,18 +81,26 @@ def main():
         # KROK 2: Zasoby graficzne
         progress.update(overall_task, description="[red]Generowanie wykresów i wzorów...")
         # Warto wyciszyć printy w assets.py, żeby nie "psuły" paska postępu
-        generate_assets(sys, k1, k2, k3)
+        temp_dir = f"temp/{student_number}"
+        os.makedirs(temp_dir, exist_ok=True)
+        generate_assets(temp_dir, sys, k1, k2, k3)
         progress.advance(overall_task)
 
         # KROK 3: AI
         progress.update(overall_task, description="[magenta]Generowanie opisów przez AI (może zająć długi czas)...")
 
         # Zastąp funkcję get_ai_response gotowym stringiem, aby ustawić opis na sztywno, a nie generować go za każdym razem
-        ai_forcejump_summary = get_ai_response("Podsumuj jak działa wykres odpowiedzi skokowej dla wymuszenia u0(t)=2*1(t). Opisz co się dzieje w układzie i jak to widać na wykresie.")
-        progress.advance(overall_task)
+        if replace_ai and len(replace_ai) == 2:
+            ai_forcejump_summary = replace_ai[0]
+            ai_nyq_summary = replace_ai[1]
+            progress.advance(overall_task)
+            progress.advance(overall_task)
 
-        ai_nyq_summary = get_ai_response("Podsumuj jak działa wykres Nyquista. W tym przypadku do jego narysowania uzylem cz. Re, Im, parametru L_jw. Nie wspominaj co robią - podsumuj jedynie działanie tego wykresu.")
-        progress.advance(overall_task)
+        else:
+            ai_forcejump_summary = get_ai_response("Podsumuj jak działa wykres odpowiedzi skokowej dla wymuszenia u0(t)=2*1(t). Opisz co się dzieje w układzie i jak to widać na wykresie.")
+            progress.advance(overall_task)
+            ai_nyq_summary = get_ai_response("Podsumuj jak działa wykres Nyquista. W tym przypadku do jego narysowania uzylem cz. Re, Im, parametru L_jw. Nie wspominaj co robią - podsumuj jedynie działanie tego wykresu.")
+            progress.advance(overall_task)
 
         # 3. Wyświetlenie tabeli z odpowiedziami AI
         ai_table = Table(show_header=False, box=None)        
@@ -92,7 +118,8 @@ def main():
         pdf.add_font(font_name, "BI", f"{font_base}_Bold_Italic.ttf")
 
         def add_img_to_ch(img_name, w=45, ydel=4):
-            pdf.image(img_name, w=w)
+            img_path = f"{temp_dir}/{img_name}"
+            pdf.image(img_path, w=w)
             pdf.set_y(pdf.get_y() - ydel)
 
         # Strona tytułowa
@@ -105,7 +132,7 @@ def main():
         pdf.set_font(font_name, "B", 14)
         pdf.cell(0, 10, f"{student_name}, {student_number}", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         pdf.set_font(font_name, "I", 14)
-        pdf.cell(0, 10, f"Zrobione w Pythonie, dostępne na github:", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
+        pdf.cell(0, 10, f"Zrobione w Pythonie, kod na Github:", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
         pdf.set_text_color("#FB4AC5")  # Set text color to pink
         pdf.cell(0, 10, code_link, align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
         pdf.set_text_color(0, 0, 0)  # Reset text color to black
@@ -113,7 +140,7 @@ def main():
         # Rozdziały
         pdf.add_page()
         pdf.chapter_title("Założenia")
-        pdf.image("main_diag.png", x=15, w=180)
+        pdf.image(f"{temp_dir}/main_diag.png", x=15, w=180)
 
         pdf.set_y(pdf.get_y() - 8)
         for img in ["G_eq.png", "Gr_eq.png", "k1_eq.png", "k2_eq.png", "k3_eq.png"]:
@@ -121,7 +148,7 @@ def main():
         pdf.set_y(pdf.get_y() + 8)
 
         pdf.chapter_title("a) Transmitancja zastępcza (redukcja układu do 1 bloku)")
-        pdf.image("reduced_diag.png", x=67.5, w=100)
+        pdf.image(f"{temp_dir}/reduced_diag.png", x=67.5, w=100)
         pdf.set_y(pdf.get_y() - 6)
 
         for img in ["step1.png", "step2.png"]:
@@ -132,7 +159,7 @@ def main():
         pdf.chapter_title("b) Analiza wymuszenia skokowego u0(t) = 2*1(t)")
         pdf.set_font(font_name, "", 14)  # Reset font style
         pdf.write(text=ai_forcejump_summary+"\n")
-        pdf.image("step.png", x=10, w=180)
+        pdf.image(f"{temp_dir}/step.png", x=10, w=180)
         
         pdf.chapter_title("c) Wykres Nyquista")
         pdf.set_font(font_name, "", 14)  # Reset font style
@@ -140,7 +167,7 @@ def main():
         add_img_to_ch("Re_eq.png", w=60)
         add_img_to_ch("Im_eq.png", w=80)
         add_img_to_ch("L_jw_eq.png", w=100, ydel=0)
-        pdf.image("nyquist.png", x=10, w=180)
+        pdf.image(f"{temp_dir}/nyquist.png", x=10, w=180)
 
         pdf.chapter_title("d) Redukcja transmitancji operatorowej sprzężenia")
         add_img_to_ch("step2.png", w=90, ydel=6)
@@ -149,24 +176,42 @@ def main():
         nazwa_raportu = f"Raport_TMiPA_{student_name.replace(' ', '_')}.pdf"
         pdf.output(nazwa_raportu)
         progress.advance(overall_task)
-
-        # KROK 5: Sprzątanie
-        progress.update(overall_task, description="[red]Usuwanie plików tymczasowych...")
-        for plik in os.listdir("."):
-            if plik.endswith(".png"):
-                os.remove(plik)
                 
-        progress.advance(overall_task)
-
         # 4. Tabelka końcowa (Wynikowa)
         result_table = Table(show_header=False, box=None)
         result_table.add_row("[bold cyan]PLIK WYJŚCIOWY:[/bold cyan]", f"[underline yellow]{nazwa_raportu}[/underline yellow]")
         
         console.print(Panel(result_table, title="[bold green]FINAŁ[/bold green]", border_style="green"))
 
-        progress.update(overall_task, description="[bold green]Sukces!")
+        progress.update(overall_task, description="[grey]Sukces!")
 
     #console.print(f"\n[bold green]Gotowe![/bold green] Raport znajdziesz pod nazwą: [underline]{nazwa_raportu}[/underline]")
 
 if __name__ == "__main__":
-    main()
+    start_time = time.time()
+
+    with Progress(
+        SpinnerColumn(speed=2), # Kręcące się kółeczko
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(), # Pasek postępu
+        TaskProgressColumn(text_format="[yellow]{task.percentage:>3.0f}%"), # Procenty
+        console=console
+    ) as main_progress:
+        
+        main_task = main_progress.add_task("[bright_blue]System generowania działa...", total=students.__len__())
+
+        for s in students:
+            main(s)
+            main_progress.advance(main_task)
+        
+        # Sprzątanie
+        temp_dir = "temp"
+        main_progress.update(main_task, description="[red]Usuwanie plików tymczasowych...")
+        shutil.rmtree(temp_dir)
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        minutes, seconds = divmod(int(elapsed_time), 60)
+
+        main_progress.advance(main_task)
+        main_progress.update(main_task, description=f"[bold green]Wszystko gotowe po {minutes} minutach i {seconds} sekundach.[/bold green]")

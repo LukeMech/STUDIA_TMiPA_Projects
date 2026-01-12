@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import os
 
 lw = 2
 pm_fs = 24
@@ -20,7 +21,9 @@ def draw_sum(ax, x, y, r=0.3):
     ax.add_patch(circle)
     return x, y
 
-def draw_main_diagram(filename):
+def draw_main_diagram(temp_dir, filename):
+    filepath = os.path.join(temp_dir, filename)
+
     _, ax = plt.subplots(figsize=(14, 10))
 
     ax.set_xlim(0, 12)
@@ -79,10 +82,12 @@ def draw_main_diagram(filename):
     ax.text(2.2, 5.5, "x(t)", fontsize=d_fs)
 
     # Zapis pliku
-    plt.savefig(filename, bbox_inches='tight', dpi=300)
+    plt.savefig(filepath, bbox_inches='tight', dpi=300)
     plt.close()
 
-def draw_reduced_diagram(filename):
+def draw_reduced_diagram(temp_dir, filename):
+    filepath = os.path.join(temp_dir, filename)
+
     _, ax = plt.subplots(figsize=(8, 4))
     ax.set_xlim(0, 8)
     ax.set_ylim(0, 4)
@@ -102,6 +107,6 @@ def draw_reduced_diagram(filename):
     ax.text(5.5, 2.3, "y(t)", fontsize=d_fs)
 
     # Zapis
-    plt.savefig(filename, bbox_inches='tight', dpi=300)
+    plt.savefig(filepath, bbox_inches='tight', dpi=300)
     plt.close()
 
