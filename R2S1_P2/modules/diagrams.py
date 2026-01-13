@@ -5,8 +5,6 @@ import os
 lw = 2
 pm_fs = 24
 d_fs = 14
-arrow_props = dict(arrowstyle='->', lw=lw, color='black', connectionstyle="angle,angleA=90,angleB=0")
-arrow_props_B = dict(arrowstyle='->', lw=lw, color='black', connectionstyle="angle,angleA=0,angleB=90")
 
 # Pomocnicza funkcja do rysowania bloków
 def draw_block(ax, x, y, w, h, tekst):
@@ -21,7 +19,7 @@ def draw_sum(ax, x, y, r=0.3):
     ax.add_patch(circle)
     return x, y
 
-def draw_main_diagram(temp_dir, filename):
+def draw_main_diagram(temp_dir, filename, color):
     filepath = os.path.join(temp_dir, filename)
 
     _, ax = plt.subplots(figsize=(14, 10))
@@ -30,6 +28,9 @@ def draw_main_diagram(temp_dir, filename):
     ax.set_ylim(0, 8)
     ax.set_aspect('equal')
     ax.axis('off')
+
+    arrow_props = dict(arrowstyle='->', lw=lw, color=color, connectionstyle="angle,angleA=90,angleB=0")
+    arrow_props_B = dict(arrowstyle='->', lw=lw, color=color, connectionstyle="angle,angleA=0,angleB=90")
 
     # --- RYSOWANIE ELEMENTÓW ---
 
@@ -85,7 +86,7 @@ def draw_main_diagram(temp_dir, filename):
     plt.savefig(filepath, bbox_inches='tight', dpi=300)
     plt.close()
 
-def draw_reduced_diagram(temp_dir, filename):
+def draw_reduced_diagram(temp_dir, filename, color):
     filepath = os.path.join(temp_dir, filename)
 
     _, ax = plt.subplots(figsize=(8, 4))
@@ -93,6 +94,8 @@ def draw_reduced_diagram(temp_dir, filename):
     ax.set_ylim(0, 4)
     ax.set_aspect('equal')
     ax.axis('off')
+
+    arrow_props = dict(arrowstyle='->', lw=lw, color=color, connectionstyle="angle,angleA=90,angleB=0")
 
     # Rysowanie uproszczonego schematu
     # Wejście

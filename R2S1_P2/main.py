@@ -16,11 +16,15 @@ students = [
     (
         student_info["name"],
         student_index,
+        student_info["color"],
         student_info["k1"],
         student_info["k2"],
         student_info["k3"],
         student_info["code_link"],
-        student_info.get("replace_ai", [])
+        student_info.get("replace_ai_1", ""),
+        student_info.get("replace_ai_2", ""),
+        student_info.get("replace_ai_3", ""),
+        student_info.get("replace_ai_4", "")
     )
     for student_index, student_info in students_data.items()
 ]
@@ -31,13 +35,14 @@ font_name = "Roboto"
 font_base = f"res/fonts/{font_name}"
 
 def main(student_info):
-    student_name, student_number, k1, k2, k3, code_link, replace_ai = student_info
+    student_name, student_number, color, k1, k2, k3, code_link, replace_ai_1, replace_ai_2, replace_ai_3, replace_ai_4 = student_info
     # 1. Wyświetlenie tabeli z danymi wejściowymi
     input_table = Table(show_header=False, box=None)
     input_table.add_column("Parametr", style="dim")
     input_table.add_column("Wartość", style="bold yellow")
     input_table.add_row("Student", student_name)
     input_table.add_row("Indeks", student_number)
+    input_table.add_row("Kolor", color)
     input_table.add_row("Parametry k", f"k1={k1}, k2={k2}, k3={k3}")
     input_table.add_row("GitHub", code_link)
     
@@ -53,10 +58,9 @@ def main(student_info):
     ) as progress:
         
         # Tworzymy główne zadanie
-        overall_task = progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=6)
+        overall_task = progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=8)
         
-        import os
-        from modules.calculations import get_system_functions
+        from modules.calculations import get_system_functions, hurwitz_criterion, is_point_outside_nyquist, get_characteristic_polynomial
         from modules.assets import generate_assets
         from modules.pdf_report import ProjectReport
         from fpdf.enums import XPos, YPos
@@ -76,6 +80,7 @@ def main(student_info):
 
         progress.update(overall_task, description="[green]Obliczanie transmitancji...")
         sys = get_system_functions(k1, k2, k3)
+        coefficients = get_characteristic_polynomial(sys['G_cl_sym'])
         progress.advance(overall_task)
 
         # KROK 2: Zasoby graficzne
@@ -83,24 +88,39 @@ def main(student_info):
         # Warto wyciszyć printy w assets.py, żeby nie "psuły" paska postępu
         temp_dir = f"temp/{student_number}"
         os.makedirs(temp_dir, exist_ok=True)
-        generate_assets(temp_dir, sys, k1, k2, k3)
+        generate_assets(temp_dir, sys, k1, k2, k3, coefficients, color)
         progress.advance(overall_task)
 
         # KROK 3: AI
         progress.update(overall_task, description="[magenta]Generowanie opisów przez AI (może zająć długi czas)...")
 
         # Zastąp funkcję get_ai_response gotowym stringiem, aby ustawić opis na sztywno, a nie generować go za każdym razem
-        if replace_ai and len(replace_ai) == 2:
-            ai_forcejump_summary = replace_ai[0]
-            ai_nyq_summary = replace_ai[1]
-            progress.advance(overall_task)
-            progress.advance(overall_task)
-
+        if len(replace_ai_1) > 0:
+            ai_forcejump_summary = replace_ai_1
         else:
             ai_forcejump_summary = get_ai_response("Podsumuj jak działa wykres odpowiedzi skokowej dla wymuszenia u0(t)=2*1(t). Opisz co się dzieje w układzie i jak to widać na wykresie.")
-            progress.advance(overall_task)
+        progress.advance(overall_task)
+
+        if len(replace_ai_2) > 0:
+            ai_nyq_summary = replace_ai_2
+        else:
             ai_nyq_summary = get_ai_response("Podsumuj jak działa wykres Nyquista. W tym przypadku do jego narysowania uzylem cz. Re, Im, parametru L_jw. Nie wspominaj co robią - podsumuj jedynie działanie tego wykresu.")
-            progress.advance(overall_task)
+        progress.advance(overall_task)
+
+        # Kryterium Hurwitza
+        hurwitz_stable = hurwitz_criterion(coefficients)
+        if len(replace_ai_3) > 0:
+            ai_hurwitz_summary = replace_ai_3
+        else:
+            ai_hurwitz_summary = get_ai_response(f"Podsumuj analizę Hurwitza. Układ jest {'stabilny' if hurwitz_stable else 'niestabilny'} - napisz na bazie czego zostało to określone.")
+        progress.advance(overall_task)
+
+        nyquist_stable = is_point_outside_nyquist(sys['L_num'])
+        if len(replace_ai_4) > 0:
+            ai_nyquist_summary = replace_ai_4
+        else:
+            ai_nyquist_summary = get_ai_response(f"Podsumuj analizę Nyquista. Punkt (-1, 0) {'jest poza' if nyquist_stable else 'nie jest poza'} wykresem - określ co to znaczy.")
+        progress.advance(overall_task)
 
         # KROK 4: PDF
         progress.update(overall_task, description="[cyan]Składanie pliku PDF...")
@@ -163,8 +183,33 @@ def main(student_info):
         pdf.image(f"{temp_dir}/nyquist.png", x=10, w=180)
 
         pdf.chapter_title("d) Redukcja transmitancji operatorowej sprzężenia")
-        add_img_to_ch("step2.png", w=90, ydel=6)
-        
+        add_img_to_ch("step2.png", w=90, ydel=-10)
+
+        # Dodanie analizy Hurwitza do PDF
+        pdf.chapter_title("e) Analiza stabilności (Hurwitz i Nyquist)")
+
+        # Kryterium Hurwitza
+        pdf.set_font(font_name, "B", 14)
+        pdf.write(text=f"Hurwitz: Układ jest {'stabilny' if hurwitz_stable else 'niestabilny'}" + "\n", )
+        pdf.set_font(font_name, "", 14)
+        pdf.write(text=ai_hurwitz_summary + "\n\n")
+
+        pdf.write(text="Wyznaczniki Hurwitza:\n")
+        pdf.set_y(pdf.get_y() - 10)
+        for idx in range(1, len(coefficients)):
+            add_img_to_ch(f"hurwitz_det_{idx}.png", w=70, ydel=10)
+        pdf.set_y(pdf.get_y() + 10)
+
+        pdf.write(text="Macierz Hurwitza:\n")
+        pdf.set_y(pdf.get_y() - 10)
+        add_img_to_ch("hurwitz_matrix.png", w=100, ydel=-4)
+
+        # Kryterium Nyquista
+        pdf.set_font(font_name, "B", 14)
+        pdf.write(text=f"Nyquist: Punkt (-1, 0) {'jest poza' if nyquist_stable else 'nie jest poza'} wykresem. Układ jest {'stabilny' if nyquist_stable else 'niestabilny'}" + "\n", )
+        pdf.set_font(font_name, "", 14)
+        pdf.write(text=ai_nyquist_summary)
+
         # Zapisywanie PDF
         nazwa_raportu = f"Raport_TMiPA_{student_name.replace(' ', '_')}.pdf"
         pdf.output(nazwa_raportu)
