@@ -241,11 +241,15 @@ if __name__ == "__main__":
         console=console
     ) as main_progress:
         
-        main_task = main_progress.add_task("[bright_blue]System generowania działa...", total=students.__len__())
-
+        n=1
+        main_task = main_progress.add_task(f"[bright_blue]System generowania działa... [{n}/{students.__len__()}]", total=students.__len__())
+        
         for s in students:
             main(s)
+            n+=1
             main_progress.advance(main_task)
+            main_progress.update(main_task, description=f"[bright_blue]System generowania działa... [{n}/{students.__len__()}]")
+
         
         # Sprzątanie
         temp_dir = "temp"
