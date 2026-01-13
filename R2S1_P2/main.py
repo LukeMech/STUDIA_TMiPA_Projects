@@ -1,8 +1,6 @@
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-from rich.table import Table
-from rich.panel import Panel
-import tomllib, os, shutil, time
+import tomllib, os, shutil, time, signal
 
 # Load students data from students.toml
 students_file = "students.toml"
@@ -58,14 +56,8 @@ def main(student_info):
     ) as progress:
         
         # Tworzymy główne zadanie
-        overall_task = progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=8)
+        overall_task = progress.add_task("", total=7)
         
-        from modules.calculations import get_system_functions, hurwitz_criterion, is_point_outside_nyquist, get_characteristic_polynomial
-        from modules.assets import generate_assets
-        from modules.pdf_report import ProjectReport
-        from fpdf.enums import XPos, YPos
-        from g4f.client import Client
-
         def get_ai_response(prompt, ws=False):
             client = Client()
             response = client.chat.completions.create(
@@ -76,8 +68,6 @@ def main(student_info):
             return response.choices[0].message.content
         
         # KROK 1: Obliczenia
-        progress.advance(overall_task)
-
         progress.update(overall_task, description="[green]Obliczanie transmitancji...")
         sys = get_system_functions(k1, k2, k3)
         coefficients = get_characteristic_polynomial(sys['G_cl_sym'])
@@ -231,34 +221,61 @@ def main(student_info):
 
 
 if __name__ == "__main__":
-    start_time = time.time()
+    n=0
+    try:
+        start_time = time.time()
 
-    with Progress(
-        SpinnerColumn(speed=2), # Kręcące się kółeczko
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(), # Pasek postępu
-        TaskProgressColumn(text_format="[yellow]{task.percentage:>3.0f}%"), # Procenty
-        console=console
-    ) as main_progress:
-        
-        n=1
-        main_task = main_progress.add_task(f"[bright_blue]System generowania działa... [{n}/{students.__len__()}]", total=students.__len__())
+        # Obsługa sygnału CTRL+C (SIGINT)
+        def signal_handler(sig, frame):
+            raise Exception("POMINIĘTO!")
 
-        for s in students:
-            main(s)
-            n+=1
+        signal.signal(signal.SIGINT, signal_handler)
+
+        with Progress(
+            SpinnerColumn(speed=2), # Kręcące się kółeczko
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(), # Pasek postępu
+            TaskProgressColumn(text_format="[yellow]{task.percentage:>3.0f}%"), # Procenty
+            console=console
+        ) as main_progress:
+            
+            main_task = main_progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=students.__len__()+1)
+
+            from modules.calculations import get_system_functions, hurwitz_criterion, is_point_outside_nyquist, get_characteristic_polynomial
+            from modules.assets import generate_assets
+            from modules.pdf_report import ProjectReport
+            from fpdf.enums import XPos, YPos
+            from g4f.client import Client
+            from rich.table import Table
+            from rich.panel import Panel
+
+            for student in students:
+                n+=1
+                main_progress.advance(main_task)
+                main_progress.update(main_task, description=f"[bright_blue]System generowania działa... [{n}/{students.__len__()}]")
+                try:
+                    main(student)
+                except Exception as e:
+                    if str(e) == "POMINIĘTO!":
+                        console.print("[bold yellow][W]: Proces przerwany przez użytkownika. Pomijam bieżącego studenta...[/bold yellow]")
+                        continue
+                    else:
+                        raise e
+
+            # Sprzątanie
+            temp_dir = "temp"
+            main_progress.update(main_task, description="[red]Usuwanie plików tymczasowych...")
+            shutil.rmtree(temp_dir)
+
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            minutes, seconds = divmod(int(elapsed_time), 60)
+
             main_progress.advance(main_task)
-            main_progress.update(main_task, description=f"[bright_blue]System generowania działa... [{n}/{students.__len__()}]")
-
-        
-        # Sprzątanie
-        temp_dir = "temp"
-        main_progress.update(main_task, description="[red]Usuwanie plików tymczasowych...")
-        shutil.rmtree(temp_dir)
-
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        minutes, seconds = divmod(int(elapsed_time), 60)
-
-        main_progress.advance(main_task)
-        main_progress.update(main_task, description=f"[bold green]Wszystko gotowe po {minutes} minutach i {seconds} sekundach.[/bold green]")
+            main_progress.update(main_task, description=f"[bold green]Wszystko gotowe po {minutes} minutach i {seconds} sekundach.[/bold green]")
+    
+    except Exception as e:
+        if str(e) == "POMINIĘTO!":
+            console.print("[bold yellow][W]: Proces przerwany przez użytkownika..[/bold yellow]")
+        else:
+            console.print(f"[bold red][E] {e}")
