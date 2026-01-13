@@ -175,7 +175,7 @@ def main(student_info):
         pdf.write(text=ai_nyq_summary+"\n")
         add_img_to_ch("Re_eq.png", w=60)
         add_img_to_ch("Im_eq.png", w=80)
-        add_img_to_ch("L_jw_eq.png", w=100, ydel=0)
+        add_img_to_ch("L_jw_eq.png", w=100, ydel=-2)
         pdf.image(f"{temp_dir}/nyquist.png", x=10, w=180)
 
         pdf.chapter_title("d) Redukcja transmitancji operatorowej sprzężenia")
