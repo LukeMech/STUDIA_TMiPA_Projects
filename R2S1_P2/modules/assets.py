@@ -70,14 +70,14 @@ def generate_hurwitz_assets(temp_dir, coefficients):
             latex_rows.append(" & ".join(row_vals))
 
         matrix_latex = (
-            r"H = \left[ "
+            r"H = \left[ \begin{array}{" + "c" * n_order + r"} "
             + r" \\ ".join(latex_rows)
-            + r" \right]"
+            + r" \end{array} \right]"
         )
 
         save_latex_img(temp_dir, matrix_latex, "hurwitz_matrix.png", enhanced_latex=True)
 
-    except:
+    except Exception:
         rows = []
         for i in range(n_order):
             row_vals = [str(round(float(val), 3)) for val in H[i, :]]

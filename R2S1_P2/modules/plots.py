@@ -7,17 +7,19 @@ def save_latex_img(temp_dir, latex_str, filename, size=22, enhanced_latex=False)
     filepath = os.path.join(temp_dir, filename)
     def fun():
         plt.close()
+        plt.rcParams['font.family'] = 'sans-serif'
+        plt.rcParams['font.sans-serif'] = ['Helvetica']
         plt.figure(figsize=(4, 1))
-        plt.text(0, 0, f"${latex_str}$", size=size)
+        plt.text(0, 0, f"${latex_str}$", size=size, family='sans-serif')
         plt.axis('off')
         plt.savefig(filepath, dpi=200, transparent=True, bbox_inches='tight')
         plt.close()
-        
+
     if enhanced_latex:
         try:
             plt.rcParams["text.usetex"] = True
             fun()
-        except:
+        except Exception:
             plt.rcParams["text.usetex"] = False
             fun()
     else:
