@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import control as ctrl
 import os
 
-def save_latex_img(temp_dir, latex_str, filename, size=22):
+def save_latex_img(temp_dir, latex_str, filename, size=22, enhanced_latex=False):
     os.makedirs(temp_dir, exist_ok=True)
     filepath = os.path.join(temp_dir, filename)
     def fun():
@@ -12,10 +12,15 @@ def save_latex_img(temp_dir, latex_str, filename, size=22):
         plt.axis('off')
         plt.savefig(filepath, dpi=200, transparent=True, bbox_inches='tight')
         plt.close()
-    try:
-        plt.rcParams["text.usetex"] = True
-        fun()
-    except:
+        
+    if enhanced_latex:
+        try:
+            plt.rcParams["text.usetex"] = True
+            fun()
+        except:
+            plt.rcParams["text.usetex"] = False
+            fun()
+    else:
         plt.rcParams["text.usetex"] = False
         fun()
 

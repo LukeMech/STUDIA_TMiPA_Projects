@@ -75,7 +75,7 @@ def generate_hurwitz_assets(temp_dir, coefficients):
             + r" \right]"
         )
 
-        save_latex_img(temp_dir, matrix_latex, "hurwitz_matrix.png")
+        save_latex_img(temp_dir, matrix_latex, "hurwitz_matrix.png", enhanced_latex=True)
 
     except:
         rows = []
