@@ -70,7 +70,7 @@ def main(student_info):
             client = Client()
             response = client.chat.completions.create(
                 model="deepseek",
-                messages=[{"role": "user", "content": prompt + " Nie używaj formatowania tekstu (pogrubień przy pomocy * itp.). Odpowiedz w formie czystego tekstu. "}],
+                messages=[{"role": "user", "content": prompt + " Nie używaj formatowania tekstu (pogrubień przy pomocy * itp.). Odpowiedz w formie czystego tekstu. Nie przekrocz limitu 150 słów."}],
                 web_search=ws
             )
             return response.choices[0].message.content
@@ -146,7 +146,12 @@ def main(student_info):
         pdf.cell(0, 10, f"{student_name}, {student_number}", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         pdf.set_font(font_name, "I", 14)
         pdf.cell(0, 10, f"Zrobione w Pythonie, kod na Github:", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
-        pdf.set_text_color("#FB4AC5")  # Set text color to pink
+        try:
+            pdf.set_text_color(color)  # Set text color
+        except:
+            from matplotlib import colors
+            pdf.set_text_color(colors.to_hex(color))  # Set text color
+
         pdf.cell(0, 10, code_link, align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT, link=code_link)
         pdf.set_text_color(0, 0, 0)  # Reset text color to black
 
