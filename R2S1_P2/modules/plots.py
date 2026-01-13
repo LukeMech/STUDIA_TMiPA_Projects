@@ -8,9 +8,10 @@ def save_latex_img(temp_dir, latex_str, filename, size=22, enhanced_latex=False)
     def fun():
         plt.close()
         plt.rcParams['font.family'] = 'sans-serif'
-        plt.rcParams['font.sans-serif'] = ['Helvetica']
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+        plt.rcParams['font.weight'] = 'regular'
         plt.figure(figsize=(4, 1))
-        plt.text(0, 0, f"${latex_str}$", size=size, family='sans-serif')
+        plt.text(0, 0, f"${latex_str}$", size=size, family='sans-serif', weight='regular')
         plt.axis('off')
         plt.savefig(filepath, dpi=200, transparent=True, bbox_inches='tight')
         plt.close()
