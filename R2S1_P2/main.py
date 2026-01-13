@@ -155,6 +155,7 @@ def main(student_info):
             add_img_to_ch(img)
         pdf.set_y(pdf.get_y() + 8)
 
+        pdf.add_page()
         pdf.chapter_title("a) Transmitancja zastępcza (redukcja układu do 1 bloku)")
         pdf.image(f"{temp_dir}/reduced_diag.png", x=67.5, w=100)
         pdf.set_y(pdf.get_y() - 6)
