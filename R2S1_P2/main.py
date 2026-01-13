@@ -286,7 +286,7 @@ if __name__ == "__main__":
                 minutes, seconds = divmod(int(elapsed_time), 60)
 
                 main_progress.advance(main_task)
-                main_progress.update(main_task, description=f"[bold green]Wszystko gotowe po {minutes} minutach i {seconds} sekundach.[/bold green]")
+                main_progress.update(main_task, description=f"[bold green]Wszystko gotowe w {minutes}:{seconds}.[/bold green]")
     
     except Exception as e:
         if str(e) == "POMINIĘTO!":
