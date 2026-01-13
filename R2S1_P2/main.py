@@ -62,7 +62,7 @@ def main(student_info):
             client = Client()
             response = client.chat.completions.create(
                 model="deepseek",
-                messages=[{"role": "user", "content": prompt + " Nie używaj formatowania tekstu (pogrubień przy pomocy * itp.). Odpowiedz w formie czystego tekstu. Nie przekrocz limitu 40 słów."}],
+                messages=[{"role": "user", "content": prompt + " Nie używaj formatowania tekstu (pogrubień przy pomocy * itp.). Nie przekrocz limitu 60 słów."}],
                 web_search=ws
             )
             return response.choices[0].message.content
