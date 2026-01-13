@@ -39,7 +39,7 @@ def main(student_info):
     # 1. Wyświetlenie tabeli z danymi wejściowymi
     input_table = Table(show_header=False, box=None)
     input_table.add_column("Parametr", style="dim")
-    input_table.add_column("Wartość", style="bold yellow")
+    input_table.add_column("Wartość", style=f"bold {color}")
     input_table.add_row("Student", student_name)
     input_table.add_row("Indeks", student_number)
     input_table.add_row("Kolor", color)
