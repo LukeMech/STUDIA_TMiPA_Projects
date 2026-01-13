@@ -239,50 +239,54 @@ if __name__ == "__main__":
 
         # Filter students based on the provided index
         if args.index is not None:
-            students = [student for student in students if student[1] == args.index]
+            students = [s for s in students if str(s[1]) == str(args.index)]
 
-        with Progress(
-            SpinnerColumn(speed=2), # Kręcące się kółeczko
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(), # Pasek postępu
-            TaskProgressColumn(text_format="[yellow]{task.percentage:>3.0f}%"), # Procenty
-            console=console
-        ) as main_progress:
-            
-            main_task = main_progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=students.__len__()+1)
+        if students.__len__() == 0:
+            console.print("[bold red][E]: Nie znaleziono studenta o podanym numerze indeksu.[/bold red]")
 
-            from modules.calculations import get_system_functions, hurwitz_criterion, is_point_outside_nyquist, get_characteristic_polynomial
-            from modules.assets import generate_assets
-            from modules.pdf_report import ProjectReport
-            from fpdf.enums import XPos, YPos
-            from g4f.client import Client
-            from rich.table import Table
-            from rich.panel import Panel
+        else:
+            with Progress(
+                SpinnerColumn(speed=2), # Kręcące się kółeczko
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(), # Pasek postępu
+                TaskProgressColumn(text_format="[yellow]{task.percentage:>3.0f}%"), # Procenty
+                console=console
+            ) as main_progress:
+                
+                main_task = main_progress.add_task("[bright_blue]Importowanie bibliotek Python...", total=students.__len__()+1)
 
-            for student in students:
-                n+=1
+                from modules.calculations import get_system_functions, hurwitz_criterion, is_point_outside_nyquist, get_characteristic_polynomial
+                from modules.assets import generate_assets
+                from modules.pdf_report import ProjectReport
+                from fpdf.enums import XPos, YPos
+                from g4f.client import Client
+                from rich.table import Table
+                from rich.panel import Panel
+
+                for student in students:
+                    n+=1
+                    main_progress.advance(main_task)
+                    main_progress.update(main_task, description=f"[bright_blue]System generowania działa... [{n}/{students.__len__()}]")
+                    try:
+                        main(student)
+                    except Exception as e:
+                        if str(e) == "POMINIĘTO!":
+                            console.print("[bold yellow][W]: Proces przerwany przez użytkownika. Pomijam bieżącego studenta...[/bold yellow]")
+                            continue
+                        else:
+                            raise e
+
+                # Sprzątanie
+                temp_dir = "temp"
+                main_progress.update(main_task, description="[red]Usuwanie plików tymczasowych...")
+                shutil.rmtree(temp_dir)
+
+                end_time = time.time()
+                elapsed_time = end_time - start_time
+                minutes, seconds = divmod(int(elapsed_time), 60)
+
                 main_progress.advance(main_task)
-                main_progress.update(main_task, description=f"[bright_blue]System generowania działa... [{n}/{students.__len__()}]")
-                try:
-                    main(student)
-                except Exception as e:
-                    if str(e) == "POMINIĘTO!":
-                        console.print("[bold yellow][W]: Proces przerwany przez użytkownika. Pomijam bieżącego studenta...[/bold yellow]")
-                        continue
-                    else:
-                        raise e
-
-            # Sprzątanie
-            temp_dir = "temp"
-            main_progress.update(main_task, description="[red]Usuwanie plików tymczasowych...")
-            shutil.rmtree(temp_dir)
-
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            minutes, seconds = divmod(int(elapsed_time), 60)
-
-            main_progress.advance(main_task)
-            main_progress.update(main_task, description=f"[bold green]Wszystko gotowe po {minutes} minutach i {seconds} sekundach.[/bold green]")
+                main_progress.update(main_task, description=f"[bold green]Wszystko gotowe po {minutes} minutach i {seconds} sekundach.[/bold green]")
     
     except Exception as e:
         if str(e) == "POMINIĘTO!":
