@@ -3,7 +3,7 @@ from modules.plots import save_latex_img, generate_analysis_plots
 from modules.diagrams import draw_main_diagram, draw_reduced_diagram
 import os
 
-def generate_assets(temp_dir, sys, k1, k2, k3, coefficients, color):
+def generate_assets(temp_dir, sys, k1, k2, k3, coefficients, color, console):
     """
     Generuje wszystkie zasoby graficzne automatycznie na podstawie parametrów.
     """
@@ -47,10 +47,10 @@ def generate_assets(temp_dir, sys, k1, k2, k3, coefficients, color):
 
     draw_main_diagram(temp_dir, "main_diag.png", color)
     draw_reduced_diagram(temp_dir, "reduced_diag.png", color)
-    generate_hurwitz_assets(temp_dir, coefficients)
+    generate_hurwitz_assets(temp_dir, coefficients, console)
 
 
-def generate_hurwitz_assets(temp_dir, coefficients):
+def generate_hurwitz_assets(temp_dir, coefficients, console):
     n_order = len(coefficients) - 1
     H = sp.zeros(n_order, n_order)
 
@@ -78,6 +78,8 @@ def generate_hurwitz_assets(temp_dir, coefficients):
         save_latex_img(temp_dir, matrix_latex, "hurwitz_matrix.png", enhanced_latex=True)
 
     except Exception:
+        console.print("[yellow][W] LaTeX rendering failed, falling back to simple format.")
+
         rows = []
         for i in range(n_order):
             row_vals = [str(round(float(val), 3)) for val in H[i, :]]
