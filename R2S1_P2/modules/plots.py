@@ -17,12 +17,8 @@ def save_latex_img(temp_dir, latex_str, filename, size=22, enhanced_latex=False)
         plt.close()
 
     if enhanced_latex:
-        try:
-            plt.rcParams["text.usetex"] = True
-            fun()
-        except Exception:
-            plt.rcParams["text.usetex"] = False
-            fun()
+        plt.rcParams["text.usetex"] = True
+        fun()
     else:
         plt.rcParams["text.usetex"] = False
         fun()
