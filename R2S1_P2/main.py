@@ -1,6 +1,6 @@
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-import tomllib, os, shutil, time, signal
+import tomllib, os, shutil, time, signal, argparse
 
 # Load students data from students.toml
 students_file = "students.toml"
@@ -231,6 +231,15 @@ if __name__ == "__main__":
             raise Exception("POMINIĘTO!")
 
         signal.signal(signal.SIGINT, signal_handler)
+
+        # Argument parser for selecting a specific student
+        parser = argparse.ArgumentParser(description="Generuje projekt.")
+        parser.add_argument("index", type=int, nargs="?", help="Numer indeksu studenta do wygenerowania.")
+        args = parser.parse_args()
+
+        # Filter students based on the provided index
+        if args.index is not None:
+            students = [student for student in students if student[1] == args.index]
 
         with Progress(
             SpinnerColumn(speed=2), # Kręcące się kółeczko
