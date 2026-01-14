@@ -18,7 +18,7 @@ students = [
         student_info["k1"],
         student_info["k2"],
         student_info["k3"],
-        student_info["code_link"],
+        student_info.get("code_link", "https://github.com/LukeMech/STUDIA_TMiPA_Projects/tree/main/R2S1_P2"),
         student_info.get("replace_ai_1", ""),
         student_info.get("replace_ai_2", ""),
         student_info.get("replace_ai_3", ""),
