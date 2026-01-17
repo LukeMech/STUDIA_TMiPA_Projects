@@ -5,4 +5,8 @@ k1 = 1.1
 k2 = 2.2
 k3 = 3.3
 code_link = "https://github.com/LukeMech/STUDIA_TMiPA_Projects/tree/main/R2S1_P2"
-replace_ai_1 = "Opis odpowiedzi skokowej dla wymuszenia u0(t) = ... "
+# Usuń # sprzed linijek poniżej, aby zaaplikować
+# replace_ai_1 = "Opis odpowiedzi skokowej dla wymuszenia u0(t) = ... "
+# replace_ai_2 = "Opis wykresu nyquista" 
+# replace_ai_3 = "Opis metody hurwitza"
+# replace_ai_4 = "Opis metody nyquista"
