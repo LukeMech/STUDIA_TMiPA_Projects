@@ -61,7 +61,6 @@ def main(student_info):
         def get_ai_response(prompt, ws=False):
             client = Client()
             response = client.chat.completions.create(
-                model="deepseek",
                 messages=[{"role": "user", "content": prompt + " Nie używaj formatowania tekstu (pogrubień przy pomocy * itp.). Nie przekrocz limitu 60 słów."}],
                 web_search=ws
             )
